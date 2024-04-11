@@ -1,0 +1,1 @@
+# ski_area_snow_report
