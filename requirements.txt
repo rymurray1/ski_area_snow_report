@@ -1,3 +1,4 @@
+APScheduler==3.10.4
 attrs==23.2.0
 blinker==1.7.0
 cattrs==23.2.3
@@ -24,6 +25,7 @@ requests-cache==1.2.0
 retry-requests==2.0.0
 six==1.16.0
 tzdata==2024.1
+tzlocal==5.2
 url-normalize==1.4.3
 urllib3==2.2.1
 Werkzeug==3.0.2
