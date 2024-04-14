@@ -18,6 +18,6 @@ scheduler.start()
 @app.route('/')
 def display():
     df = read_data()
-    max_snow_val = read_max_data(df)["snowfall_sum"].round(2)
-    max_resort = read_max_data(df)["resort"]
+    max_snow_val = read_max_data(df)[0].round(2)
+    max_resort = read_max_data(df)[1].title()
     return render_template('index.html', max_resort=max_resort, max_snow_val=max_snow_val)

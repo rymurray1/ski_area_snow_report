@@ -102,9 +102,10 @@ def read_data():
 df = read_data()
 def read_max_data(df):
     df = read_data()
-    return df.max()
+    max_snowfall = df["snowfall_sum"].max()
+    max_resort = df["resort"][df["snowfall_sum"].idxmax()]
 
-print(read_max_data(df)["snowfall_sum"])
+    return max_snowfall, max_resort
 
 
 
