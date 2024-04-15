@@ -12,7 +12,7 @@ def scheduled_task():
 
 # Schedule the 'scheduled_task' to run once a day
 scheduler = BackgroundScheduler(daemon=True)
-scheduler.add_job(scheduled_task, 'interval', days=1)
+scheduler.add_job(scheduled_task, 'interval', hours=6)
 scheduler.start()
 
 @app.route('/')
