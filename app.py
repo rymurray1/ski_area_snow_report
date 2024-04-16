@@ -15,7 +15,7 @@ scheduler = BackgroundScheduler(daemon=True)
 scheduler.add_job(scheduled_task, 'interval', hours=6)
 scheduler.start()
 
-@app.route('/snow')
+@app.route('/')
 def display():
     df = read_data()
     max_snow_val = read_max_data(df)[0].round(2)
