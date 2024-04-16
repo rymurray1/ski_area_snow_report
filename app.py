@@ -21,8 +21,3 @@ def display():
     max_snow_val = read_max_data(df)[0].round(2)
     max_resort = read_max_data(df)[1].title()
     return render_template('index.html', max_resort=max_resort, max_snow_val=max_snow_val)
-
-
-@app.route('/summer')
-def display():
-    return render_template('summer.html')
