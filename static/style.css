@@ -4,3 +4,15 @@ body {
     margin-top: 20vh;
     font-family: Arial, sans-serif;
 }
+
+footer {
+    padding: 20px;
+    text-align: center;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+}
+
+.separation-block {
+    margin-bottom: 50px;
+}
