@@ -18,7 +18,7 @@ def collect_data():
     params = {
         "latitude": [39.1646, 38.9353, 38.684, 37.630768, 39.27484, 39.197, 39.30444, 39.6341, 39.182, 39.1863, 39.6042, 39.4783, 39.479, 38.901, 39.5817, 39.6801, 37.63027, 39.213, 40.485, 37.9167, 39.6061, 39.88332, 37.474759, 48.376, 43.6971, 45.0314, 44.4734, 45.2778, 45.8174, 48.407, 36.596, 44.3659, 43.979282, 45.331845, 40.5777, 40.6, 40.6226, 40.6505, 41.379, 41.2006, 40.5829, 40.615139, 43.6094, 42.9602, 44.5275, 44.135098, 46.9282, 47.4246, 43.818, 43.5934],
         "longitude": [-120.2387, -119.94, -120.068, -119.032631, -120.1206, -120.2357, -120.33583, -105.8715, -106.8564, -106.8182, -106.5165, -106.0723, -106.1613, -106.9672, -105.9437, -105.898, -107.814045, -106.9378, -106.8317, -107.8375, -106.355, -105.773896, -106.793583, -116.6171, -114.3517, -70.3131, -70.8569, -111.4103, -110.8966, -114.3373, -105.4545, -73.9026, -121.688366, -121.664981, -111.624, -111.58333, -111.4851, -111.5045, -111.7807, -111.8614, -111.6556, -111.588917, -72.7968, -72.9204, -72.7839, -72.885962, -121.5045, -121.4164, -110.701, -110.8523],
-        "daily": "snowfall_sum",
+        "daily": ["temperature_2m_max", "temperature_2m_min", "sunshine_duration", "snowfall_sum", "daylight_duration","wind_speed_10m_max"],
         "timezone": "America/Denver"
     }
 
@@ -37,7 +37,12 @@ def collect_data():
     for response in responses:
         row = {}
         daily = response.Daily()
-        daily_snowfall_sum = daily.Variables(0).ValuesAsNumpy()
+        daily_temperature_2m_max = daily.Variables(0).ValuesAsNumpy()
+        daily_temperature_2m_min = daily.Variables(1).ValuesAsNumpy()
+        daily_sunshine_duration = daily.Variables(2).ValuesAsNumpy()
+        daily_snowfall_sum = daily.Variables(3).ValuesAsNumpy()
+        daily_wind_speed_10m_max = daily.Variables(5).ValuesAsNumpy()
+        daily_daylight_duration = daily.Variables(4).ValuesAsNumpy()
 
         daily_data = {"date": pd.date_range(
             start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
@@ -45,8 +50,16 @@ def collect_data():
             freq = pd.Timedelta(seconds = daily.Interval()),
             inclusive = "left"
         )}
-        daily_data["snowfall_sum"] = daily_snowfall_sum.sum()
+        
         daily_data["resort"] = resorts[counter]
+        daily_data["snowfall_sum"] = daily_snowfall_sum.sum()
+        daily_data["temperature_2m_max"] = daily_temperature_2m_max.mean()
+        daily_data["temperature_2m_min"] = daily_temperature_2m_min.mean()
+        daily_data["wind_speed_10m_max"] = daily_wind_speed_10m_max.mean()
+        daily_data["sunshine_duration"] = daily_sunshine_duration.mean() / 3600
+        daily_data["daylight_duration"] = daily_daylight_duration.mean() / 3600
+        daily_data["avg_percent_sunny"] = (daily_data["sunshine_duration"] / daily_data["daylight_duration"])*100
+        
 
         daily_dataframe = pd.DataFrame(data = daily_data)
         # row = [daily_data["resort"],daily_dataframe["snowfall_sum"]]
@@ -55,6 +68,13 @@ def collect_data():
             row["date"] = datetime.date.today()
             row["resort"] = daily_data["resort"]
             row["snowfall_sum"] = daily_data["snowfall_sum"]
+            row["temperature_2m_max"] = daily_data["temperature_2m_max"]
+            row["temperature_2m_min"] = daily_data["temperature_2m_min"]
+            row["wind_speed_10m_max"] = daily_data["wind_speed_10m_max"]
+            row["sunshine_duration"] = daily_data["sunshine_duration"]
+            row["daylight_duration"] = daily_data["daylight_duration"]
+            row["avg_percent_sunny"] = daily_data["avg_percent_sunny"]
+
             
         table.append(row)
         counter+=1
@@ -70,6 +90,8 @@ df = collect_data()
 def update_database(df):
     conn = sqlite3.connect('snow_report2.db')
     cursor = conn.cursor()
+
+    cursor.execute('''DROP TABLE IF EXISTS snow_report''')
     
     # Create table if it does not exist
     cursor.execute('''
@@ -77,6 +99,12 @@ def update_database(df):
         forecast_date TEXT,
         resort TEXT,
         snowfall_sum REAL,
+        temperature_2m_max REAL,
+        temperature_2m_min REAL,
+        wind_speed_10m_max REAL,
+        sunshine_duration REAL,
+        daylight_duration REAL,
+        avg_percent_sunny REAL,
         PRIMARY KEY (resort)
     );
     ''')
@@ -85,9 +113,9 @@ def update_database(df):
     for _, row in df.iterrows():
         # Correct column names to match those in the dataframe
         cursor.execute('''
-        REPLACE INTO snow_report (forecast_date, resort, snowfall_sum)
-        VALUES (?, ?, ?);
-        ''', (row['date'], row['resort'], row['snowfall_sum']))  # Corrected column names here
+        REPLACE INTO snow_report (forecast_date, resort, snowfall_sum, temperature_2m_max, temperature_2m_min, wind_speed_10m_max, sunshine_duration, daylight_duration, avg_percent_sunny)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        ''', (row['date'], row['resort'], row['snowfall_sum'], row['temperature_2m_max'], row['temperature_2m_min'], row['wind_speed_10m_max'],row['sunshine_duration'], row['daylight_duration'], row["avg_percent_sunny"]))  # Corrected column names here
     
     # Commit the changes and close the connection
     conn.commit()
@@ -98,14 +126,20 @@ def read_data():
     df = pd.read_sql_query("SELECT * FROM snow_report", conn)
     conn.close()
     return df
+# print(read_data())
 
 df = read_data()
 def read_max_data(df):
     df = read_data()
     max_snowfall = df["snowfall_sum"].max()
-    max_resort = df["resort"][df["snowfall_sum"].idxmax()]
+    params = ["resort","temperature_2m_max",  "temperature_2m_min",  "wind_speed_10m_max",  "sunshine_duration",  "daylight_duration",  "avg_percent_sunny"]
+    max_dict = {"max_snowfall":max_snowfall}
+    for item in params:
+        key = f"max_{item}"
+        value = df[f"{item}"][df["snowfall_sum"].idxmax()]
+        max_dict[key] = value
+    
+    return max_dict
 
-    return max_snowfall, max_resort
-
-
+print(read_max_data(df))
 

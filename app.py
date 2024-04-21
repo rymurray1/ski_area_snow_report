@@ -22,7 +22,15 @@ def about():
 @app.route('/')
 def display():
     df = read_data()
-    max_snow_val = read_max_data(df)[0].round(2)
-    max_resort = read_max_data(df)[1].title()
-    return render_template('index.html', max_resort=max_resort, max_snow_val=max_snow_val)
+    max_dict = read_max_data(df)
+    snowfall = max_dict["max_snowfall"].round(2)
+    resort = max_dict["max_resort"].title()
+    max_temp = max_dict["max_temperature_2m_max"].round(2)
+    min_temp = max_dict["max_temperature_2m_min"].round(2)
+    max_wind = max_dict["max_wind_speed_10m_max"].round(2)
+    sunshine_hours = max_dict["max_sunshine_duration"].round(2)
+    daylight_hours = max_dict["max_daylight_duration"].round(2)
+    percent_sunny = max_dict["max_avg_percent_sunny"].round(2)
+  
+    return render_template('index.html', resort=resort, snowfall=snowfall, max_temp=max_temp,min_temp=min_temp,max_wind=max_wind,sunshine_hours=sunshine_hours, daylight_hours=daylight_hours, percent_sunny= percent_sunny)
 
